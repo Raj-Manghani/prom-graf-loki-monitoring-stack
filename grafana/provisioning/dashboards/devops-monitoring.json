@@ -1,0 +1,144 @@
+{
+  "id": null,
+  "uid": "devops-monitoring",
+  "title": "DevOps Monitoring",
+  "timezone": "browser",
+  "schemaVersion": 30,
+  "version": 2,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "CPU Usage (%)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "100 - (avg by(instance)(irate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "{{instance}}",
+          "interval": ""
+        }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Memory Usage (%)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "(1 - (node_memory_MemAvailable_bytes{job=\"node-exporter\"} / node_memory_MemTotal_bytes{job=\"node-exporter\"})) * 100",
+          "legendFormat": "{{instance}}",
+          "interval": ""
+        }
+      ],
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Disk Usage (%)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "(node_filesystem_size_bytes{job=\"node-exporter\", fstype!=\"tmpfs\",mountpoint!=\"/boot\"} - node_filesystem_free_bytes{job=\"node-exporter\", fstype!=\"tmpfs\",mountpoint!=\"/boot\"}) / node_filesystem_size_bytes{job=\"node-exporter\", fstype!=\"tmpfs\",mountpoint!=\"/boot\"} * 100",
+          "legendFormat": "{{instance}} {{mountpoint}}",
+          "interval": ""
+        }
+      ],
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Network Traffic (bytes/sec)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by(instance)(irate(node_network_receive_bytes_total{job=\"node-exporter\"}[5m]))",
+          "legendFormat": "{{instance}} RX",
+          "interval": ""
+        },
+        {
+          "expr": "sum by(instance)(irate(node_network_transmit_bytes_total{job=\"node-exporter\"}[5m]))",
+          "legendFormat": "{{instance}} TX",
+          "interval": ""
+        }
+      ],
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Container CPU Usage (%)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by(container_label_com_docker_compose_service)(rate(container_cpu_usage_seconds_total{job=\"cadvisor\", container_label_com_docker_compose_service!=\"\"}[5m])) * 100",
+          "legendFormat": "{{container_label_com_docker_compose_service}}",
+          "interval": ""
+        }
+      ],
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Container Memory Usage (MB)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by(container_label_com_docker_compose_service)(container_memory_usage_bytes{job=\"cadvisor\", container_label_com_docker_compose_service!=\"\"}) / 1024 / 1024",
+          "legendFormat": "{{container_label_com_docker_compose_service}}",
+          "interval": ""
+        }
+      ],
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Prometheus TSDB Head Size (MB)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "prometheus_tsdb_head_series / 1024 / 1024",
+          "legendFormat": "Head Series",
+          "interval": ""
+        }
+      ],
+      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Active Alerts",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "legendFormat": "{{alertname}}",
+          "interval": ""
+        }
+      ],
+      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 }
+    },
+    {
+      "type": "logs",
+      "title": "Recent Logs",
+      "datasource": "Loki",
+      "targets": [
+        {
+          "expr": "{job=~\".*\"}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 32, "w": 24, "h": 10 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Log Volume (lines/sec)",
+      "datasource": "Loki",
+      "targets": [
+        {
+          "expr": "sum by(host)(rate({job=~\".*logs\"}[1m]))",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 42, "w": 24, "h": 8 }
+    }
+  ]
+}
