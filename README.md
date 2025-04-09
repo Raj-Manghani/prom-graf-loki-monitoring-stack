@@ -95,6 +95,75 @@ docker compose up -d
 
 ---
 
+## Monitoring Remote Hosts
+
+To monitor additional remote hosts, you need to run **Node Exporter** and **cAdvisor** on each host.
+
+### 1. Run Node Exporter on remote host
+
+**Using Docker:**
+
+```bash
+docker run -d --name node-exporter -p 9100:9100 --pid=host --net=host \
+  --restart unless-stopped \
+  -v /proc:/host/proc:ro \
+  -v /sys:/host/sys:ro \
+  -v /:/rootfs:ro \
+  prom/node-exporter:latest \
+  --path.procfs=/host/proc --path.sysfs=/host/sys --path.rootfs=/rootfs
+```
+
+**Using Podman:**
+
+```bash
+podman run -d --name node-exporter -p 9100:9100 --pid=host --net=host \
+  --privileged \
+  -v /proc:/host/proc:ro \
+  -v /sys:/host/sys:ro \
+  -v /:/rootfs:ro \
+  docker.io/prom/node-exporter:latest \
+  --path.procfs=/host/proc --path.sysfs=/host/sys --path.rootfs=/rootfs
+```
+
+### 2. Run cAdvisor on remote host (Docker only)
+
+> **Note:** Podman container monitoring is **not supported** due to cAdvisor limitations.  
+> You will only get host-level metrics on Podman hosts.
+
+**Using Docker:**
+
+```bash
+docker run -d --name cadvisor --privileged -p 8081:8080 \
+  -v /:/rootfs:ro \
+  -v /var/run:/var/run:ro \
+  -v /sys:/sys:ro \
+  -v /var/lib/docker/:/var/lib/docker:ro \
+  gcr.io/cadvisor/cadvisor:latest
+```
+
+### 3. Update Prometheus scrape configs
+
+In `prometheus/prometheus.yml`, add your remote hosts:
+
+```yaml
+- job_name: 'node-exporter'
+  static_configs:
+    - targets: ['node-exporter:9100', '10.10.0.151:9100', '10.10.0.152:9100']
+
+- job_name: 'cadvisor'
+  static_configs:
+    - targets: ['cadvisor:8080', '10.10.0.151:8081', '10.10.0.152:8081']
+```
+
+Replace IPs with your remote hosts' IP addresses.
+
+### 4. (Optional) Run Promtail on remote host
+
+If you want to collect logs from remote hosts, run Promtail there and configure it to push to your Loki instance.
+
+---
+
+
 ## Customization
 
 - **Prometheus targets:** Edit `prometheus/prometheus.yml`.
