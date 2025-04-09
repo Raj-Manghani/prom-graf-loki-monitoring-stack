@@ -14,13 +14,11 @@ All components are orchestrated via **Docker Compose**.
 
 ---
 
-## Features
-- **Infrastructure monitoring** with Prometheus scraping multiple hosts and containers
-- **Centralized log aggregation** with Loki and Promtail
-- **Pre-configured Grafana dashboards** for DevOps observability
-- **Alert routing** with Alertmanager (customize as needed)
-- **Multi-environment support** via environment variables and templated configs
-- **Secrets management** using `.env` files and a config preparation script
+## Important Limitations
+
+- **Podman container monitoring is NOT supported.**
+- Due to cAdvisor limitations, **only host-level metrics** are available on Podman hosts.
+- Container metrics and alerts work **only with Docker**.
 
 ---
 
@@ -28,15 +26,14 @@ All components are orchestrated via **Docker Compose**.
 ```
 .
 ├── docker-compose.yml            # Orchestrates all services
-├── prepare-configs.sh            # Injects secrets into configs
-├── .env.example                  # Template for your secrets (copy to .env)
 ├── alertmanager/                 # Alertmanager config
 ├── grafana/
 │   └── provisioning/             # Grafana datasources and dashboards
 ├── loki/
 │   └── config.yaml               # Loki config
 ├── prometheus/
-│   └── prometheus.yml            # Prometheus scrape configs
+│   ├── prometheus.yml            # Prometheus scrape configs and alert rules
+│   └── alert_rules.yml           # Prometheus alerting rules
 ├── promtail/
 │   └── promtail-config.yaml      # Promtail config
 └── .gitignore                    # Ignores secrets and local data
@@ -52,45 +49,65 @@ git clone git@github.com:Raj-Manghani/prom-graf-loki-monitoring-stack.git
 cd prom-graf-loki-monitoring-stack
 ```
 
-### 2. Create your secrets file
-Copy the example and fill in your real secrets and URLs:
-```bash
-cp .env.example .env
-nano .env
-```
+### 2. Configure your environment
 
-### 3. Prepare configuration files
-Inject your secrets into the configs:
-```bash
-chmod +x prepare-configs.sh
-./prepare-configs.sh
-```
+**Edit the following files directly to customize:**
 
-### 4. Start the monitoring stack
+- **`docker-compose.yml`**
+  - Set Grafana admin credentials:
+    ```yaml
+    environment:
+      - GF_SECURITY_ADMIN_USER=your_admin_user
+      - GF_SECURITY_ADMIN_PASSWORD=your_admin_password
+    ```
+- **`prometheus/prometheus.yml`**
+  - Add or update your node-exporter and cAdvisor targets:
+    ```yaml
+    - targets: ['node-exporter:9100', '10.10.0.151:9100', '10.10.0.152:9100']
+    - targets: ['cadvisor:8080', '10.10.0.151:8081', '10.10.0.152:8081']
+    ```
+- **`promtail/promtail-config.yaml`**
+  - Set your Loki push API endpoints:
+    ```yaml
+    clients:
+      - url: http://localhost:3100/loki/api/v1/push
+      - url: http://your-remote-loki:3100/loki/api/v1/push
+    ```
+- **`grafana/provisioning/datasources/datasource.yml`**
+  - Set your Prometheus and Loki datasource URLs:
+    ```yaml
+    url: http://prometheus:9090
+    url: http://loki:3100
+    url: http://your-remote-loki:3100
+    ```
+
+### 3. Start the monitoring stack
 ```bash
 docker compose up -d
 ```
 
-### 5. Access Grafana
+### 4. Access Grafana
 - URL: `http://localhost:3000`
-- Username: as set in `.env`
-- Password: as set in `.env`
+- **Default credentials:**  
+  Username: `admin`  
+  Password: `admin`  
+- Change these in `docker-compose.yml` before deployment if desired.
 
 ---
 
 ## Customization
 
-- **Prometheus targets:** Edit `.env` to add/remove scrape targets.
+- **Prometheus targets:** Edit `prometheus/prometheus.yml`.
 - **Grafana dashboards:** Add JSON files under `grafana/provisioning/dashboards/`.
-- **Alertmanager:** Customize `alertmanager/config.yml` for your alert routing.
-- **Loki retention:** Adjust `loki/config.yaml` as needed.
+- **Alertmanager:** Customize `alertmanager/config.yml`.
+- **Loki retention:** Adjust `loki/config.yaml`.
 
 ---
 
 ## Security Notes
-- **Never commit your `.env` file** — it contains sensitive secrets.
-- Only commit `.env.example` with placeholders.
-- The `prepare-configs.sh` script injects secrets locally before deployment.
+- This stack is designed for **private/internal networks**.
+- IP addresses and credentials should be customized before deployment.
+- No sensitive secrets are included by default.
 
 ---
 

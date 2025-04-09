@@ -1,0 +1,67 @@
+groups:
+- name: node_alerts
+  rules:
+  - alert: HighNodeCPUUsage
+    expr: avg(rate(node_cpu_seconds_total{mode!="idle"}[5m])) by (instance) > 0.9
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage on {{ $labels.instance }}"
+      description: "CPU usage is above 90% for more than 2 minutes."
+
+  - alert: HighNodeMemoryUsage
+    expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.9
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High memory usage on {{ $labels.instance }}"
+      description: "Memory usage is above 90% for more than 2 minutes."
+
+  - alert: LowDiskSpace
+    expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay"} / node_filesystem_size_bytes{fstype!~"tmpfs|overlay"}) < 0.1
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Low disk space on {{ $labels.instance }} mount {{ $labels.mountpoint }}"
+      description: "Less than 10% disk space available."
+
+  - alert: NodeDown
+    expr: up == 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Node {{ $labels.instance }} is down"
+      description: "Prometheus target is down."
+
+- name: container_alerts
+  rules:
+  - alert: HighContainerCPUUsage
+    expr: sum(rate(container_cpu_usage_seconds_total{job="cadvisor"}[5m])) by (instance, name) > 0.8
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage in container {{ $labels.name }} on host {{ $labels.instance }}"
+      description: "Container {{ $labels.name }} on host {{ $labels.instance }} CPU usage is above 80% for more than 2 minutes."
+
+  - alert: HighContainerMemoryUsage
+    expr: (sum(container_memory_usage_bytes{job="cadvisor"}) by (instance, name) / sum(container_spec_memory_limit_bytes{job="cadvisor"}) by (instance, name)) > 0.9
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High memory usage in container {{ $labels.name }} on host {{ $labels.instance }}"
+      description: "Container {{ $labels.name }} on host {{ $labels.instance }} memory usage is above 90% for more than 2 minutes."
+
+  - alert: ContainerRestarts
+    expr: (sum by (instance, name) (increase(container_restart_count_total{job="cadvisor"}[5m]))) > 1
+    for: 0m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Container {{ $labels.name }} on host {{ $labels.instance }} restarted"
+      description: "Container {{ $labels.name }} on host {{ $labels.instance }} has restarted more than once in the last 5 minutes."

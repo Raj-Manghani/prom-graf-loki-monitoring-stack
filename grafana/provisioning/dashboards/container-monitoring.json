@@ -1,7 +1,7 @@
 {
   "id": null,
   "uid": "devops-monitoring",
-  "title": "DevOps Monitoring",
+  "title": "Container Monitoring",
   "timezone": "browser",
   "schemaVersion": 30,
   "version": 2,
@@ -110,7 +110,7 @@
       "targets": [
         {
           "expr": "ALERTS{alertstate=\"firing\"}",
-          "legendFormat": "{{alertname}}",
+          "legendFormat": "{{alertname}} {{instance}} {{name}}",
           "interval": ""
         }
       ],
@@ -122,7 +122,7 @@
       "datasource": "Loki",
       "targets": [
         {
-          "expr": "{job=~\".*\"}",
+          "expr": "{job=~\".+\"}",
           "refId": "A"
         }
       ],
