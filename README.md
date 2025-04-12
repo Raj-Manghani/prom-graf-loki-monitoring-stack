@@ -234,4 +234,4 @@ ssh -N -R 3100:localhost:3100 <user>@<remote-host-ip>
 ---
 
 ## License
-Specify your license here (e.g., MIT, Apache 2.0).
+MIT
