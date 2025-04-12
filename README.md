@@ -25,18 +25,28 @@ All components are orchestrated via **Docker Compose**.
 ## Repository Structure
 ```
 .
+├── .gitignore
 ├── docker-compose.yml            # Orchestrates all services
-├── alertmanager/                 # Alertmanager config
+├── LICENSE
+├── README.md
+├── alertmanager/
+│   └── config.yml                # Alertmanager config
 ├── grafana/
-│   └── provisioning/             # Grafana datasources and dashboards
+│   └── provisioning/
+│       ├── dashboards/           # Grafana dashboard JSON files
+│       │   ├── container-monitoring.json
+│       │   ├── dashboard.yml     # Dashboard provisioning config
+│       │   ├── node-exporter-dashboard.json
+│       │   └── stack-health.json
+│       └── datasources/
+│           └── datasource.yml    # Grafana datasource provisioning config
 ├── loki/
 │   └── config.yaml               # Loki config
 ├── prometheus/
-│   ├── prometheus.yml            # Prometheus scrape configs and alert rules
-│   └── alert_rules.yml           # Prometheus alerting rules
+│   ├── alert_rules.yml           # Prometheus alerting rules
+│   └── prometheus.yml            # Prometheus scrape configs
 ├── promtail/
-│   └── promtail-config.yaml      # Promtail config
-└── .gitignore                    # Ignores secrets and local data
+│   └── promtail-config.yaml      # Promtail config (for the main host)
 ```
 
 ---
