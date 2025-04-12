@@ -2,6 +2,12 @@
   "id": null,
   "uid": "devops-monitoring",
   "title": "Container Monitoring",
+  "tags": [
+    "Containers",
+    "Prometheus",
+    "cAdvisor"
+    "Loki"
+  ],
   "timezone": "browser",
   "schemaVersion": 30,
   "version": 2,
@@ -13,8 +19,8 @@
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "100 - (avg by(instance)(irate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"idle\"}[5m])) * 100)",
-          "legendFormat": "{{instance}}",
+          "expr": "100 - (avg by(instance_name)(irate(node_cpu_seconds_total{job=\"node-exporter\", mode=\"idle\", instance_name=~\"$host\"}[5m])) * 100)",
+          "legendFormat": "{{instance_name}}",
           "interval": ""
         }
       ],
@@ -26,8 +32,8 @@
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "(1 - (node_memory_MemAvailable_bytes{job=\"node-exporter\"} / node_memory_MemTotal_bytes{job=\"node-exporter\"})) * 100",
-          "legendFormat": "{{instance}}",
+          "expr": "(1 - (node_memory_MemAvailable_bytes{job=\"node-exporter\", instance_name=~\"$host\"} / node_memory_MemTotal_bytes{job=\"node-exporter\", instance_name=~\"$host\"})) * 100",
+          "legendFormat": "{{instance_name}}",
           "interval": ""
         }
       ],
@@ -39,8 +45,8 @@
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "(node_filesystem_size_bytes{job=\"node-exporter\", fstype!=\"tmpfs\",mountpoint!=\"/boot\"} - node_filesystem_free_bytes{job=\"node-exporter\", fstype!=\"tmpfs\",mountpoint!=\"/boot\"}) / node_filesystem_size_bytes{job=\"node-exporter\", fstype!=\"tmpfs\",mountpoint!=\"/boot\"} * 100",
-          "legendFormat": "{{instance}} {{mountpoint}}",
+          "expr": "(node_filesystem_size_bytes{job=\"node-exporter\", fstype!=\"tmpfs\",mountpoint!=\"/boot\", instance_name=~\"$host\"} - node_filesystem_free_bytes{job=\"node-exporter\", fstype!=\"tmpfs\",mountpoint!=\"/boot\", instance_name=~\"$host\"}) / node_filesystem_size_bytes{job=\"node-exporter\", fstype!=\"tmpfs\",mountpoint!=\"/boot\", instance_name=~\"$host\"} * 100",
+          "legendFormat": "{{instance_name}} {{mountpoint}}",
           "interval": ""
         }
       ],
@@ -52,13 +58,13 @@
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum by(instance)(irate(node_network_receive_bytes_total{job=\"node-exporter\"}[5m]))",
-          "legendFormat": "{{instance}} RX",
+          "expr": "sum by(instance_name)(irate(node_network_receive_bytes_total{job=\"node-exporter\", instance_name=~\"$host\"}[5m]))",
+          "legendFormat": "{{instance_name}} RX",
           "interval": ""
         },
         {
-          "expr": "sum by(instance)(irate(node_network_transmit_bytes_total{job=\"node-exporter\"}[5m]))",
-          "legendFormat": "{{instance}} TX",
+          "expr": "sum by(instance_name)(irate(node_network_transmit_bytes_total{job=\"node-exporter\", instance_name=~\"$host\"}[5m]))",
+          "legendFormat": "{{instance_name}} TX",
           "interval": ""
         }
       ],
@@ -70,8 +76,8 @@
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum by(container_label_com_docker_compose_service)(rate(container_cpu_usage_seconds_total{job=\"cadvisor\", container_label_com_docker_compose_service!=\"\"}[5m])) * 100",
-          "legendFormat": "{{container_label_com_docker_compose_service}}",
+          "expr": "sum by(container_label_com_docker_compose_service, instance_name)(rate(container_cpu_usage_seconds_total{job=\"cadvisor\", container_label_com_docker_compose_service!=\"\", instance_name=~\"$host\"}[5m])) * 100",
+          "legendFormat": "{{container_label_com_docker_compose_service}} on {{instance_name}}",
           "interval": ""
         }
       ],
@@ -83,12 +89,38 @@
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "sum by(container_label_com_docker_compose_service)(container_memory_usage_bytes{job=\"cadvisor\", container_label_com_docker_compose_service!=\"\"}) / 1024 / 1024",
-          "legendFormat": "{{container_label_com_docker_compose_service}}",
+          "expr": "sum by(container_label_com_docker_compose_service, instance_name)(container_memory_usage_bytes{job=\"cadvisor\", container_label_com_docker_compose_service!=\"\", instance_name=~\"$host\"}) / 1024 / 1024",
+          "legendFormat": "{{container_label_com_docker_compose_service}} on {{instance_name}}",
           "interval": ""
         }
       ],
       "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 }
+    },
+    {
+      "type": "graph",
+      "title": "Container Network RX (bytes/sec)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by(container_label_com_docker_compose_service, instance_name)(irate(container_network_receive_bytes_total{job=\"cadvisor\", container_label_com_docker_compose_service!=\"\", instance_name=~\"$host\"}[5m]))",
+          "legendFormat": "{{container_label_com_docker_compose_service}} on {{instance_name}}",
+          "interval": ""
+        }
+      ],
+      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 } 
+    },
+    {
+      "type": "graph",
+      "title": "Container Network TX (bytes/sec)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum by(container_label_com_docker_compose_service, instance_name)(irate(container_network_transmit_bytes_total{job=\"cadvisor\", container_label_com_docker_compose_service!=\"\", instance_name=~\"$host\"}[5m]))",
+          "legendFormat": "{{container_label_com_docker_compose_service}} on {{instance_name}}",
+          "interval": ""
+        }
+      ],
+      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 } 
     },
     {
       "type": "graph",
@@ -101,7 +133,7 @@
           "interval": ""
         }
       ],
-      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 }
+      "gridPos": { "x": 0, "y": 32, "w": 12, "h": 8 } 
     },
     {
       "type": "graph",
@@ -109,12 +141,12 @@
       "datasource": "Prometheus",
       "targets": [
         {
-          "expr": "ALERTS{alertstate=\"firing\"}",
-          "legendFormat": "{{alertname}} {{instance}} {{name}}",
+          "expr": "ALERTS{alertstate=\"firing\", instance_name=~\"$host\"}",
+          "legendFormat": "{{alertname}} {{instance_name}} {{name}}",
           "interval": ""
         }
       ],
-      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 }
+      "gridPos": { "x": 12, "y": 32, "w": 12, "h": 8 } 
     },
     {
       "type": "logs",
@@ -122,11 +154,11 @@
       "datasource": "Loki",
       "targets": [
         {
-          "expr": "{job=~\".+\"}",
+          "expr": "{job=~\".+\", host=~\"$host\"}",
           "refId": "A"
         }
       ],
-      "gridPos": { "x": 0, "y": 32, "w": 24, "h": 10 }
+      "gridPos": { "x": 0, "y": 40, "w": 24, "h": 10 } 
     },
     {
       "type": "timeseries",
@@ -138,7 +170,35 @@
           "refId": "A"
         }
       ],
-      "gridPos": { "x": 0, "y": 42, "w": 24, "h": 8 }
+      "gridPos": { "x": 0, "y": 50, "w": 24, "h": 8 } 
     }
-  ]
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "Prometheus" 
+        },
+        "definition": "label_values(instance_name)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Instance",
+        "multi": true,
+        "name": "host", 
+        "options": [],
+        "query": "label_values(instance_name)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  }
 }

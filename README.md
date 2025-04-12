@@ -41,6 +41,16 @@ All components are orchestrated via **Docker Compose**.
 
 ---
 
+## Included Dashboards
+
+This stack comes with pre-provisioned Grafana dashboards:
+
+- **Node Information:** (UID: `NodeExpt`) Provides detailed host metrics (CPU, memory, disk, network) from Node Exporter. Tagged with `Node Health`.
+- **Container Monitoring:** (UID: `devops-monitoring`) Focuses on Docker container metrics (CPU, memory, network) from cAdvisor and host metrics. Includes log panel integration with Loki. Tagged with `Containers`, `Prometheus`, `cAdvisor`.
+- **Monitoring Stack Health:** (UID: `stack-health`) Monitors the health of the monitoring stack itself (Prometheus targets, Loki, Promtail, Alertmanager). Tagged with `Monitor Stack`, `Prometheus`, `Node Jobs`.
+
+---
+
 ## Setup Instructions
 
 ### 1. Clone the repository
@@ -159,7 +169,40 @@ Replace IPs with your remote hosts' IP addresses.
 
 ### 4. (Optional) Run Promtail on remote host
 
-If you want to collect logs from remote hosts, run Promtail there and configure it to push to your Loki instance.
+If you want to collect logs from remote hosts, run Promtail there and configure it to push to your Loki instance. See the SSH Tunneling section below if direct access is not possible.
+
+### 5. Monitoring Remote Hosts via SSH Tunnel
+
+If your remote hosts are not directly reachable from the machine running this monitoring stack (e.g., they are in a different private network or behind a firewall), you can use SSH tunnels to forward the necessary ports.
+
+**Scenario 1: Scraping Remote Exporters (Prometheus -> Remote Host)**
+
+If Prometheus (running on the local Docker host) needs to scrape Node Exporter (port 9100) or cAdvisor (port 8081) on a remote host (`<remote-host-ip>`), you can run the following SSH command **on the local Docker host**:
+
+```bash
+# Forward local port 9101 to remote host's port 9100 (Node Exporter)
+# Forward local port 8081 to remote host's port 8081 (cAdvisor)
+ssh -N -L <local-bind-ip>:9101:localhost:9100 -L <local-bind-ip>:8081:localhost:8081 <user>@<remote-host-ip>
+```
+
+- Replace `<local-bind-ip>` with the IP Prometheus should connect to (e.g., `10.10.0.34` in your setup, or `localhost`).
+- Replace `<user>@<remote-host-ip>` with your SSH credentials for the remote host.
+- In `prometheus.yml`, configure Prometheus to scrape the **local** forwarded ports (e.g., `<local-bind-ip>:9101`, `<local-bind-ip>:8081`).
+
+**Scenario 2: Receiving Remote Logs (Remote Promtail -> Loki)**
+
+If Promtail running on a remote host needs to push logs to Loki (running on the local Docker host, port 3100), but the remote host cannot directly reach the Loki host, you can run the following SSH command **on the local Docker host**:
+
+```bash
+# Forward remote host's port 3100 to local host's port 3100 (Loki)
+ssh -N -R 3100:localhost:3100 <user>@<remote-host-ip>
+```
+
+- Replace `<user>@<remote-host-ip>` with your SSH credentials for the remote host.
+- Configure Promtail on the remote host to push logs to `http://localhost:3100/loki/api/v1/push`. The SSH tunnel will forward this traffic back to Loki on the local Docker host.
+- **Important:** Ensure `GatewayPorts yes` is set in the remote host's `/etc/ssh/sshd_config` if you need to bind the remote port to `0.0.0.0` instead of just `localhost`.
+
+**Note:** Keep SSH tunnels running reliably, potentially using tools like `autossh` or systemd services.
 
 ---
 

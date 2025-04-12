@@ -12,6 +12,7 @@ tmp/
 # Ignore OS files
 .DS_Store
 Thumbs.db
+nohup.out
 
 # Ignore editor files
 .vscode/

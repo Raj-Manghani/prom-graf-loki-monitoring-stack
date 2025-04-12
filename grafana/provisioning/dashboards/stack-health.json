@@ -1,0 +1,160 @@
+{
+  "uid": "stack-health",
+  "title": "Monitoring Stack Health",
+  "tags": [
+    "Monitor Stack",
+    "Prometheus",
+    "Node Jobs"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 30,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Prometheus Instance Status",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "min by (instance_name) (up)",
+          "legendFormat": "{{instance_name}}",
+          "refId": "A",
+          "instant": true
+        }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 }, 
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "orientation": "horizontal",
+        "textMode": "name", 
+        "colorMode": "background", 
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": 0 },
+              { "color": "green", "value": 1 }
+            ]
+          },
+          "mappings": [
+             { "type": "value", "options": { "0": { "text": "DOWN" }, "1": { "text": "UP" } } }
+          ]
+        }
+      },
+      "pluginVersion": "11.6.0"
+    },
+    {
+      "type": "timeseries",
+      "title": "Prometheus Scrape Duration (Avg)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "avg by (job) (scrape_duration_seconds)",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 8, "y": 0, "w": 16, "h": 8 },
+       "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+       "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Loki Request Rate",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(loki_request_duration_seconds_count[5m])) by (route)",
+          "legendFormat": "{{route}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+     {
+      "type": "timeseries",
+      "title": "Loki Request Errors",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(loki_request_duration_seconds_count{status_code=~\"5..\"}[5m])) by (route)",
+          "legendFormat": "{{route}} errors",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "fieldConfig": { "defaults": { "unit": "errps", "color": { "mode": "fixed", "fixedColor": "red" } } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Promtail Send Rate (Entries)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(promtail_sent_entries_total[5m])) by (host)",
+          "legendFormat": "{{host}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "fieldConfig": { "defaults": { "unit": "eps" } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Promtail Send Errors",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(promtail_dropped_entries_total[5m])) by (host)",
+          "legendFormat": "{{host}} drops",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "fieldConfig": { "defaults": { "unit": "errps", "color": { "mode": "fixed", "fixedColor": "red" } } }
+    },
+     {
+      "type": "timeseries",
+      "title": "Firing Alerts by Name", 
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "count(ALERTS{alertstate=\"firing\"}) by (alertname)", 
+          "legendFormat": "{{alertname}}",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 },
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "fieldConfig": { "defaults": { "unit": "short" } } 
+    },
+    {
+      "type": "timeseries",
+      "title": "Notification Delivery Errors", 
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(rate(alertmanager_notifications_failed_total[5m]))", 
+          "legendFormat": "Total Errors",
+          "refId": "A"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 },
+      "options": { "legend": { "calcs": [], "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "fieldConfig": { "defaults": { "unit": "errps", "color": { "mode": "fixed", "fixedColor": "red" } } }
+    }
+  ],
+  "templating": {
+    "list": []
+  }
+}

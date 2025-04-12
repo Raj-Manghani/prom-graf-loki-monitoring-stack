@@ -13,14 +13,14 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
+    ports:
+      - "9090:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
-    ports:
-      - "9090:9090"
     networks:
       - monitoring
 
@@ -90,8 +90,14 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     environment:
+      # Existing variables
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      # Added variables for subpath access
+      - GF_SERVER_ROOT_URL=https://resume.devbyraj.com/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      # Added Loki URL
+      - LOCAL_LOKI_URL=http://loki:3100
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
@@ -110,5 +116,7 @@ services:
       - ./promtail/promtail-config.yaml:/etc/promtail/promtail.yaml:ro
       - /tmp:/tmp
     command: -config.file=/etc/promtail/promtail.yaml
+    environment:
+      - LOCAL_LOKI_URL=http://loki:3100/loki/api/v1/push
     networks:
       - monitoring
