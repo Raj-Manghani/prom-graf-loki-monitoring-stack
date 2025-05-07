@@ -90,12 +90,11 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     environment:
-      # Existing variables
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin # Default-CHANGE USERNAME
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Default-CHANGE PASSWORD
       # Added variables for subpath access
-      - GF_SERVER_ROOT_URL=https://resume.devbyraj.com/grafana/
-      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SERVER_ROOT_URL=https://resume.devbyraj.com/grafana/ # Custom value.  Change or delete.
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true 
       # Added Loki URL
       - LOCAL_LOKI_URL=http://loki:3100
     volumes:
